@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hyderabad Tourist Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night: #12213A;
+    --night-deep: #0A1526;
+    --panel: #17284A;
+    --gold: #D4AF37;
+    --gold-soft: #EAD88C;
+    --granite: #8A93A3;
+    --granite-dim: #5B6577;
+    --pearl: #F3EFE4;
+    --danger: #C2554A;
+    --ok: #4C9A6B;
+    --arch-radius: 46% 46% 0 0 / 62% 62% 0 0;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html{ scroll-behavior:smooth; }
+
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior:auto; }
+    *{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
+  }
+
+  body{
+    margin:0;
+    background:var(--night-deep);
+    color:var(--pearl);
+    font-family:'Work Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  h1,h2,h3{
+    font-family:'Marcellus', serif;
+    font-weight:400;
+    letter-spacing:0.01em;
+    margin:0;
+  }
+
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+
+  a{ color:inherit; }
+
+  button{
+    font-family:'Work Sans', sans-serif;
+    cursor:pointer;
+    border:none;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  select:focus-visible{
+    outline:2px solid var(--gold-soft);
+    outline-offset:3px;
+  }
+
+  /* ---------- Top status bar ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 28px;
+    background:var(--night-deep);
+    border-bottom:1px solid rgba(212,175,55,0.15);
+  }
+
+  .brand{
+    font-family:'Marcellus', serif;
+    font-size:1.05rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--gold-soft);
+  }
+
+  .conn{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+
+  .conn-dot{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--danger);
+    box-shadow:0 0 8px rgba(194,85,74,0.8);
+    transition:background .3s, box-shadow .3s;
+  }
+  .conn-dot.live{
+    background:var(--ok);
+    box-shadow:0 0 8px rgba(76,154,107,0.9);
+  }
+
+  .conn-label{
+    font-size:0.78rem;
+    color:var(--granite);
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+  }
+
+  .btn-connect{
+    background:transparent;
+    border:1px solid var(--gold);
+    color:var(--gold-soft);
+    padding:8px 16px;
+    border-radius:3px;
+    font-size:0.8rem;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    transition:background .2s, color .2s;
+  }
+  .btn-connect:hover{ background:var(--gold); color:var(--night-deep); }
+  .btn-connect:disabled{ opacity:0.5; cursor:default; }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    position:relative;
+    height:64vh;
+    min-height:400px;
+    display:flex;
+    align-items:flex-end;
+    overflow:hidden;
+    background:var(--night) url('charminar.png') center 30%/cover no-repeat;
+  }
+
+  .hero::before{
+    content:"";
+    position:absolute; inset:0;
+    background:
+      linear-gradient(180deg, rgba(10,21,38,0.15) 0%, rgba(10,21,38,0.55) 60%, rgba(10,21,38,0.96) 100%);
+  }
+
+  .hero-content{
+    position:relative;
+    z-index:2;
+    padding:0 clamp(20px, 6vw, 64px) 40px;
+    width:100%;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:24px;
+    flex-wrap:wrap;
+  }
+
+  .hero-title{
+    font-size:clamp(2.2rem, 5.5vw, 4rem);
+    color:var(--pearl);
+    line-height:1.05;
+  }
+  .hero-title .accent{ color:var(--gold-soft); }
+
+  .hero-sub{
+    margin-top:10px;
+    color:var(--granite);
+    font-size:0.95rem;
+    letter-spacing:0.05em;
+  }
+
+  /* Live counter — instrument panel */
+  .counter-panel{
+    background:rgba(10,21,38,0.72);
+    border:1px solid rgba(212,175,55,0.35);
+    backdrop-filter:blur(6px);
+    padding:18px 26px;
+    border-radius:6px;
+    text-align:center;
+    min-width:190px;
+  }
+  .counter-label{
+    font-size:0.7rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--granite);
+    margin-bottom:6px;
+  }
+  .counter-value{
+    font-size:2.6rem;
+    color:var(--gold-soft);
+    line-height:1;
+    text-shadow:0 0 18px rgba(234,216,140,0.35);
+  }
+  .counter-note{
+    margin-top:6px;
+    font-size:0.68rem;
+    color:var(--granite-dim);
+  }
+
+  /* ---------- Sections ---------- */
+  section{
+    padding:56px clamp(20px, 6vw, 64px);
+    max-width:1200px;
+    margin:0 auto;
+  }
+
+  .section-eyebrow{
+    font-size:0.72rem;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin-bottom:8px;
+  }
+
+  .section-title{
+    font-size:1.9rem;
+    margin-bottom:34px;
+  }
+
+  /* ---------- Arch cards (signature element) ---------- */
+  .arch-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
+    gap:22px;
+  }
+
+  .arch-card{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    text-decoration:none;
+    background:var(--panel);
+    border:1px solid rgba(212,175,55,0.18);
+    border-radius:var(--arch-radius);
+    padding:38px 14px 22px;
+    transition:transform .25s ease, border-color .25s ease, background .25s ease;
+  }
+  .arch-card:hover{
+    transform:translateY(-4px);
+    border-color:var(--gold);
+    background:#1D3057;
+  }
+
+  .arch-icon{
+    width:38px; height:38px;
+    margin-bottom:14px;
+    color:var(--gold-soft);
+  }
+  .arch-icon svg{ width:100%; height:100%; }
+
+  .arch-card span{
+    font-size:0.92rem;
+    color:var(--pearl);
+    letter-spacing:0.02em;
+  }
+
+  .arch-card.book-parking{
+    background:linear-gradient(180deg, #24345A, var(--panel));
+    border-color:var(--gold);
+  }
+  .arch-card.book-parking span{ color:var(--gold-soft); }
+
+  /* ---------- Parking section ---------- */
+  #parking{
+    scroll-margin-top:24px;
+  }
+
+  .parking-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+    gap:20px;
+  }
+
+  .slot-card{
+    background:var(--panel);
+    border:1px solid rgba(212,175,55,0.18);
+    border-radius:10px;
+    padding:20px 20px 22px;
+  }
+
+  .slot-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+  }
+
+  .slot-name{
+    font-family:'Marcellus', serif;
+    font-size:1.15rem;
+    color:var(--pearl);
+  }
+
+  .slot-led{
+    width:13px; height:13px;
+    border-radius:50%;
+    background:var(--granite-dim);
+    border:1px solid rgba(255,255,255,0.15);
+    transition:background .3s, box-shadow .3s;
+  }
+  .slot-led.on{
+    background:var(--gold);
+    box-shadow:0 0 10px 3px rgba(212,175,55,0.75);
+  }
+
+  .slot-status{
+    font-size:0.75rem;
+    color:var(--granite);
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    margin-bottom:16px;
+  }
+  .slot-status.booked{ color:var(--gold-soft); }
+
+  .slot-controls{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .duration-select{
+    background:var(--night-deep);
+    color:var(--pearl);
+    border:1px solid var(--granite-dim);
+    border-radius:4px;
+    padding:9px 10px;
+    font-size:0.85rem;
+    font-family:'Work Sans', sans-serif;
+  }
+
+  .slot-buttons{
+    display:flex;
+    gap:8px;
+  }
+
+  .btn-book, .btn-cancel{
+    flex:1;
+    padding:9px 0;
+    border-radius:4px;
+    font-size:0.8rem;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    transition:opacity .2s, background .2s;
+  }
+
+  .btn-book{
+    background:var(--gold);
+    color:var(--night-deep);
+    font-weight:600;
+  }
+  .btn-book:disabled{
+    background:var(--granite-dim);
+    color:var(--night-deep);
+    opacity:0.55;
+    cursor:default;
+  }
+
+  .btn-cancel{
+    background:transparent;
+    border:1px solid var(--danger);
+    color:#E29188;
+  }
+  .btn-cancel:disabled{
+    border-color:var(--granite-dim);
+    color:var(--granite-dim);
+    opacity:0.55;
+    cursor:default;
+  }
+  .btn-cancel:not(:disabled):hover{ background:rgba(194,85,74,0.18); }
+
+  .countdown{
+    font-size:0.78rem;
+    color:var(--granite);
+    margin-top:2px;
+  }
+
+  .occ-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:16px;
+  }
+  .occ-dot{
+    width:9px; height:9px;
+    border-radius:50%;
+    background:var(--granite-dim);
+    flex-shrink:0;
+  }
+  .occ-dot.vacant{ background:var(--ok); }
+  .occ-dot.occupied{ background:var(--danger); }
+  .occ-label{
+    font-size:0.75rem;
+    color:var(--granite);
+    letter-spacing:0.02em;
+  }
+
+  .crowd-badge{
+    margin-top:8px;
+    font-size:0.72rem;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    padding:4px 10px;
+    border-radius:20px;
+    display:inline-block;
+    border:1px solid var(--granite-dim);
+    color:var(--granite);
+  }
+  .crowd-badge.low{ border-color:var(--ok); color:var(--ok); }
+  .crowd-badge.medium{ border-color:var(--gold); color:var(--gold-soft); }
+  .crowd-badge.high{ border-color:var(--danger); color:#E29188; }
+
+  .hint-banner{
+    display:none;
+    background:rgba(212,175,55,0.1);
+    border:1px solid rgba(212,175,55,0.3);
+    color:var(--gold-soft);
+    padding:14px 18px;
+    border-radius:6px;
+    font-size:0.85rem;
+    margin-bottom:28px;
+  }
+  .hint-banner.show{ display:block; }
+
+  footer{
+    text-align:center;
+    padding:30px 20px 40px;
+    color:var(--granite-dim);
+    font-size:0.75rem;
+    letter-spacing:0.04em;
+  }
+
+  @media (max-width:560px){
+    .hero{ height:56vh; }
+    .hero-content{ align-items:flex-start; }
+    .counter-panel{ min-width:150px; padding:14px 18px; }
+    .counter-value{ font-size:2rem; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand">Hyderabad &nbsp;·&nbsp; Tourist Dashboard</div>
+    <div class="conn">
+      <span class="conn-label" id="connLabel">Arduino disconnected</span>
+      <span class="conn-dot" id="connDot"></span>
+      <button class="btn-connect" id="connectBtn">Connect Arduino</button>
+    </div>
+  </div>
+
+  <header class="hero">
+    <div class="hero-content">
+      <div>
+        <h1 class="hero-title">Welcome.<br><span class="accent">To Hyderabad.</span></h1>
+        <div class="hero-sub">Live visitor insight at Charminar, powered by on-site sensors</div>
+      </div>
+      <div class="counter-panel">
+        <div class="counter-label">Live People Count</div>
+        <div class="counter-value mono" id="peopleCount">–</div>
+        <div class="counter-note">Ultrasonic detection · 8&nbsp;cm range</div>
+        <div class="crowd-badge" id="crowdBadge">–</div>
+      </div>
+    </div>
+  </header>
+
+  <section id="info">
+    <div class="section-eyebrow">Explore</div>
+    <h2 class="section-title">More Information about your location</h2>
+    <div class="arch-grid">
+      <a class="arch-card" data-query="parking+in+Hyderabad">
+        <span class="arch-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 8h4a2.5 2.5 0 0 1 0 5H9V8v9"/></svg>
+        </span>
+        <span>Parking</span>
+      </a>
+      <a class="arch-card" data-query="tourist+attractions+in+Hyderabad">
+        <span class="arch-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 20l6-11 4 7 3-5 5 9H3z"/><circle cx="8" cy="6" r="2"/></svg>
+        </span>
+        <span>Tourist Attractions</span>
+      </a>
+      <a class="arch-card" data-query="public+toilets+in+Hyderabad">
+        <span class="arch-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="4.5" r="2"/><path d="M8 22l1.5-9H7l2-6h6l2 6h-2.5L16 22"/></svg>
+        </span>
+        <span>Public Toilets</span>
+      </a>
+      <a class="arch-card" data-query="hospitals+in+Hyderabad">
+        <span class="arch-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M12 8v8M8 12h8"/></svg>
+        </span>
+        <span>Hospitals</span>
+      </a>
+      <a class="arch-card" data-query="hotels+in+Hyderabad">
+        <span class="arch-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 21V8l9-5 9 5v13"/><path d="M8 21v-6h8v6"/></svg>
+        </span>
+        <span>Hotels</span>
+      </a>
+      <a class="arch-card" data-query="restaurants+in+Hyderabad">
+        <span class="arch-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3v8a2 2 0 0 0 4 0V3M8 11v10M18 3c-2 1-2 4-2 6s0 3 2 3 2-1 2-3-0-5-2-6zM18 12v9"/></svg>
+        </span>
+        <span>Restaurants</span>
+      </a>
+      <a class="arch-card book-parking" href="#parking">
+        <span class="arch-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M8 5V3M16 5V3M3 10h18"/></svg>
+        </span>
+        <span>Book Parking</span>
+      </a>
+    </div>
+  </section>
+
+  <section id="parking">
+    <div class="section-eyebrow">Reserve a bay</div>
+    <h2 class="section-title">Book Parking</h2>
+
+    <div class="hint-banner" id="hintBanner">
+      Connect to the Arduino above to enable live booking. The bay's LED lights up for the length of your slot — 1&nbsp;hr → 20s, 2&nbsp;hr → 40s, 3&nbsp;hr → 60s — and the booking ends automatically when it turns off.
+    </div>
+
+    <div class="parking-grid" id="parkingGrid"></div>
+  </section>
+
+  <footer>Reloading this page clears all bookings and turns off every bay LED.</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------------------------------------------------------------
+     Maps quick-link buttons
+  --------------------------------------------------------------------- */
+  document.querySelectorAll('.arch-card[data-query]').forEach(function(card){
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', function(){
+      var query = card.getAttribute('data-query');
+      window.open('https://www.google.com/maps/search/' + query, '_blank', 'noopener');
+    });
+  });
+
+  /* ---------------------------------------------------------------------
+     Parking slot state + duration -> LED-on-seconds mapping
+  --------------------------------------------------------------------- */
+  var DURATIONS = [
+    { label: '1 hour',  seconds: 20 },
+    { label: '2 hours', seconds: 40 },
+    { label: '3 hours', seconds: 60 }
+  ];
+  var NUM_SLOTS = 3;
+  var slots = []; // { booked, endTime, countdownTimer }
+
+  var grid = document.getElementById('parkingGrid');
+
+  for (var i = 1; i <= NUM_SLOTS; i++){
+    slots.push({ booked:false, endTime:0, countdownTimer:null });
+
+    var card = document.createElement('div');
+    card.className = 'slot-card';
+    card.innerHTML =
+      '<div class="slot-head">' +
+        '<span class="slot-name">Bay ' + i + '</span>' +
+        '<span class="slot-led" id="led-' + i + '"></span>' +
+      '</div>' +
+      '<div class="slot-status" id="status-' + i + '">Available</div>' +
+      '<div class="occ-row">' +
+        '<span class="occ-dot" id="occ-dot-' + i + '"></span>' +
+        '<span class="occ-label" id="occ-label-' + i + '">Occupancy unknown</span>' +
+      '</div>' +
+      '<div class="slot-controls">' +
+        '<select class="duration-select" id="duration-' + i + '">' +
+          DURATIONS.map(function(d, idx){ return '<option value="' + idx + '">' + d.label + '</option>'; }).join('') +
+        '</select>' +
+        '<div class="slot-buttons">' +
+          '<button class="btn-book" id="book-' + i + '">Book</button>' +
+          '<button class="btn-cancel" id="cancel-' + i + '" disabled>Cancel</button>' +
+        '</div>' +
+        '<div class="countdown mono" id="countdown-' + i + '"></div>' +
+      '</div>';
+    grid.appendChild(card);
+  }
+
+  document.getElementById('hintBanner').classList.add('show');
+
+  function el(id){ return document.getElementById(id); }
+
+  function setSlotBooked(i, seconds){
+    var s = slots[i - 1];
+    s.booked = true;
+    s.endTime = Date.now() + seconds * 1000;
+
+    el('led-' + i).classList.add('on');
+    el('status-' + i).textContent = 'Booked';
+    el('status-' + i).classList.add('booked');
+    el('book-' + i).disabled = true;
+    el('cancel-' + i).disabled = !serialConnected;
+    el('duration-' + i).disabled = true;
+
+    if (s.countdownTimer) clearInterval(s.countdownTimer);
+    s.countdownTimer = setInterval(function(){ updateCountdown(i); }, 250);
+    updateCountdown(i);
+  }
+
+  function setSlotAvailable(i){
+    var s = slots[i - 1];
+    s.booked = false;
+    s.endTime = 0;
+    if (s.countdownTimer){ clearInterval(s.countdownTimer); s.countdownTimer = null; }
+
+    el('led-' + i).classList.remove('on');
+    el('status-' + i).textContent = 'Available';
+    el('status-' + i).classList.remove('booked');
+    el('book-' + i).disabled = !serialConnected;
+    el('cancel-' + i).disabled = true;
+    el('duration-' + i).disabled = false;
+    el('countdown-' + i).textContent = '';
+  }
+
+  function updateCountdown(i){
+    var s = slots[i - 1];
+    var remaining = Math.max(0, Math.ceil((s.endTime - Date.now()) / 1000));
+    el('countdown-' + i).textContent = remaining > 0 ? (remaining + 's remaining') : '';
+  }
+
+  for (var i = 1; i <= NUM_SLOTS; i++){
+    (function(i){
+      el('book-' + i).addEventListener('click', function(){
+        var idx = parseInt(el('duration-' + i).value, 10);
+        var seconds = DURATIONS[idx].seconds;
+        sendCommand('BOOK:' + i + ':' + seconds);
+        setSlotBooked(i, seconds); // optimistic UI; Arduino DONE:<i> confirms end
+      });
+      el('cancel-' + i).addEventListener('click', function(){
+        sendCommand('CANCEL:' + i);
+        // wait for Arduino's DONE:<i> to actually flip the UI to available
+      });
+    })(i);
+  }
+
+  /* ---------------------------------------------------------------------
+     Web Serial API — talks to the Arduino Uno
+  --------------------------------------------------------------------- */
+  var port = null;
+  var writer = null;
+  var serialConnected = false;
+
+  var connectBtn = el('connectBtn') || document.getElementById('connectBtn');
+  var connDot = document.getElementById('connDot');
+  var connLabel = document.getElementById('connLabel');
+  var peopleCountEl = document.getElementById('peopleCount');
+
+  document.getElementById('connectBtn').addEventListener('click', connectSerial);
+
+  if (!('serial' in navigator)){
+    connLabel.textContent = 'Web Serial not supported — use Chrome/Edge';
+    document.getElementById('connectBtn').disabled = true;
+  }
+
+  function setConnectedUI(isConnected){
+    serialConnected = isConnected;
+    connDot.classList.toggle('live', isConnected);
+    connLabel.textContent = isConnected ? 'Arduino connected' : 'Arduino disconnected';
+    document.getElementById('connectBtn').textContent = isConnected ? 'Reconnect' : 'Connect Arduino';
+    document.getElementById('hintBanner').classList.toggle('show', !isConnected);
+    peopleCountEl.textContent = isConnected ? '0' : '–';
+
+    var badge = document.getElementById('crowdBadge');
+    if (!isConnected){
+      badge.textContent = '–';
+      badge.classList.remove('low', 'medium', 'high');
+    } else {
+      updateCrowdBadge(0);
+    }
+
+    for (var i = 1; i <= NUM_SLOTS; i++){
+      if (!slots[i - 1].booked){
+        el('book-' + i).disabled = !isConnected;
+      }
+      el('cancel-' + i).disabled = !isConnected || !slots[i - 1].booked;
+
+      var dot = el('occ-dot-' + i);
+      var label = el('occ-label-' + i);
+      dot.classList.remove('vacant', 'occupied');
+      label.textContent = isConnected ? 'Reading occupancy…' : 'Occupancy unknown';
+    }
+  }
+
+  async function connectSerial(){
+    try{
+      port = await navigator.serial.requestPort();
+      await port.open({ baudRate: 9600 });
+
+      writer = port.writable.getWriter();
+      setConnectedUI(true);
+
+      // Ask the Arduino to clear any bookings left over from a previous session
+      sendCommand('RESET');
+
+      readLoop(); // fire and forget
+    } catch(err){
+      console.error('Serial connection failed:', err);
+      setConnectedUI(false);
+    }
+  }
+
+  async function readLoop(){
+    var decoder = new TextDecoderStream();
+    var inputDone = port.readable.pipeTo(decoder.writable);
+    var reader = decoder.readable.getReader();
+    var buffer = '';
+
+    try{
+      while (true){
+        var result = await reader.read();
+        if (result.done) break;
+        buffer += result.value;
+
+        var lines = buffer.split('\n');
+        buffer = lines.pop(); // keep the incomplete tail
+
+        for (var l = 0; l < lines.length; l++){
+          handleLine(lines[l].trim());
+        }
+      }
+    } catch(err){
+      console.error('Serial read error:', err);
+    } finally{
+      reader.releaseLock();
+      setConnectedUI(false);
+    }
+  }
+
+  function handleLine(line){
+    if (!line) return;
+
+    if (line.indexOf('COUNT:') === 0){
+      var n = parseInt(line.substring(6), 10);
+      if (!isNaN(n)){
+        peopleCountEl.textContent = n;
+        updateCrowdBadge(n);
+      }
+      return;
+    }
+
+    if (line.indexOf('DONE:') === 0){
+      var slot = parseInt(line.substring(5), 10);
+      if (slot >= 1 && slot <= NUM_SLOTS) setSlotAvailable(slot);
+      return;
+    }
+
+    if (line.indexOf('OCC:') === 0){
+      // Format: OCC:<slot>:<0|1>
+      var parts = line.split(':');
+      if (parts.length === 3){
+        var occSlot = parseInt(parts[1], 10);
+        var occState = parseInt(parts[2], 10);
+        if (occSlot >= 1 && occSlot <= NUM_SLOTS){
+          setOccupancy(occSlot, occState === 1);
+        }
+      }
+      return;
+    }
+
+    // READY / RESET_OK / unrecognised lines are ignored by the UI
+  }
+
+  function setOccupancy(i, isOccupied){
+    var dot = el('occ-dot-' + i);
+    var label = el('occ-label-' + i);
+    dot.classList.remove('vacant', 'occupied');
+    dot.classList.add(isOccupied ? 'occupied' : 'vacant');
+    label.textContent = isOccupied ? 'Bay occupied' : 'Bay vacant';
+  }
+
+  // Mirrors the Arduino's own crowd-level LED thresholds, purely for
+  // display — the physical LEDs on pins 5/6/7 are driven independently
+  // by the firmware itself.
+  function updateCrowdBadge(n){
+    var badge = document.getElementById('crowdBadge');
+    badge.classList.remove('low', 'medium', 'high');
+    if (n > 30){
+      badge.textContent = 'High crowd';
+      badge.classList.add('high');
+    } else if (n > 15){
+      badge.textContent = 'Medium crowd';
+      badge.classList.add('medium');
+    } else {
+      badge.textContent = 'Low crowd';
+      badge.classList.add('low');
+    }
+  }
+
+  async function sendCommand(cmd){
+    if (!writer) return;
+    try{
+      var encoder = new TextEncoder();
+      await writer.write(encoder.encode(cmd + '\n'));
+    } catch(err){
+      console.error('Serial write error:', err);
+    }
+  }
+
+  // Initial state
+  setConnectedUI(false);
+
+})();
+</script>
+</body>
+</html>
